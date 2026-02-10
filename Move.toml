@@ -1,0 +1,9 @@
+[package]
+name = "ai_firewall"
+version = "0.0.1"
+
+[addresses]
+firewall = "0x0"
+
+[dependencies]
+Sui = { git = "https://github.com/MystenLabs/sui.git", subdir = "crates/sui-framework/packages/sui-framework", rev = "main" }

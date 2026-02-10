@@ -1,0 +1,21 @@
+
+.pnpm-store/
+ui/.pnpm-store/
+ui/.vite/
+ui/node_modules/
+ui/dist/
+ui/_tmp_*
+
+# Move/Sui build output
+build/
+.move/
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
