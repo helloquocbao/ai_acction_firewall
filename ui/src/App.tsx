@@ -18,6 +18,60 @@ type Status = {
 
 const MODULE = "firewall";
 const MIST_PER_SUI = 1_000_000_000n;
+const STORAGE_PREFIX = `firewall:${IDS.network}:${IDS.packageId}:`;
+
+const FIREWALL_ERROR_MESSAGES: Record<number, string> = {
+  0: "Only the authorized agent can perform this action.",
+  1: "This permission has been revoked by the admin.",
+  2: "This permission has expired. Issue a new permission.",
+  3: "Transfer amount exceeds the max per transfer.",
+  4: "This proposal has already been executed.",
+  5: "The permission does not match the proposal.",
+  6: "The vault does not match the permission or proposal.",
+  7: "Total quota exceeded for this permission.",
+};
+
+function isFirewallAbort(message: string) {
+  const lower = message.toLowerCase();
+  return (
+    lower.includes("::firewall") ||
+    lower.includes("identifier(\"firewall\")") ||
+    lower.includes(IDS.packageId.toLowerCase())
+  );
+}
+
+function extractAbortCode(message: string): number | null {
+  const moveAbortMatch = message.match(/MoveAbort\([\s\S]*?,\s*(\d+)\)/);
+  if (moveAbortMatch?.[1]) return Number(moveAbortMatch[1]);
+  const abortCodeMatch = message.match(/abort_code\s*[:=]?\s*(\d+)/i);
+  if (abortCodeMatch?.[1]) return Number(abortCodeMatch[1]);
+  const fallbackMatch = message.match(/Abort code:\s*(\d+)/i);
+  if (fallbackMatch?.[1]) return Number(fallbackMatch[1]);
+  return null;
+}
+
+function toFriendlyError(message: string): string | null {
+  if (!isFirewallAbort(message)) return null;
+  const code = extractAbortCode(message);
+  if (code === null) return null;
+  return FIREWALL_ERROR_MESSAGES[code] ?? null;
+}
+
+function readStored(key: string) {
+  try {
+    return localStorage.getItem(`${STORAGE_PREFIX}${key}`) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function writeStored(key: string, value: string) {
+  try {
+    localStorage.setItem(`${STORAGE_PREFIX}${key}`, value);
+  } catch {
+    // ignore storage failures (private mode, disabled, etc.)
+  }
+}
 
 function parseSuiToMist(input: string): bigint | null {
   const value = input.trim();
@@ -79,6 +133,15 @@ export default function App() {
   });
 
   useEffect(() => {
+    setAdminId(readStored("adminId"));
+    setVaultId(readStored("vaultId"));
+    setPermissionId(readStored("permissionId"));
+    setProposalId(readStored("proposalId"));
+    setAgent(readStored("agent"));
+    setRecipient(readStored("recipient"));
+  }, []);
+
+  useEffect(() => {
     if (!agent && account?.address) {
       setAgent(account.address);
     }
@@ -86,6 +149,30 @@ export default function App() {
       setRecipient(account.address);
     }
   }, [account?.address, agent, recipient]);
+
+  useEffect(() => {
+    writeStored("adminId", adminId);
+  }, [adminId]);
+
+  useEffect(() => {
+    writeStored("vaultId", vaultId);
+  }, [vaultId]);
+
+  useEffect(() => {
+    writeStored("permissionId", permissionId);
+  }, [permissionId]);
+
+  useEffect(() => {
+    writeStored("proposalId", proposalId);
+  }, [proposalId]);
+
+  useEffect(() => {
+    writeStored("agent", agent);
+  }, [agent]);
+
+  useEffect(() => {
+    writeStored("recipient", recipient);
+  }, [recipient]);
 
   const baseTarget = useMemo(() => `${IDS.packageId}::${MODULE}`, []);
 
@@ -115,9 +202,10 @@ export default function App() {
           onError: (error) => {
             const message =
               error instanceof Error ? error.message : String(error);
+            const friendly = toFriendlyError(message);
             setStatus({
               kind: "error",
-              message: `${label} failed: ${message}`,
+              message: `${label} failed: ${friendly ?? message}`,
             });
             reject(error);
           },
