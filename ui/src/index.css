@@ -359,29 +359,77 @@ pre {
 
 .field {
   display: grid;
-  gap: 6px;
-  margin-top: 12px;
-  font-size: 0.85rem;
-  color: #5b5146;
+  gap: 8px;
+  margin-top: 0;
+  font-size: 0.9rem;
+  color: var(--ink-soft);
+}
+
+.field label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: #6b5e51;
 }
 
 .field input {
-  padding: 16px 18px;
-  border-radius: 18px;
-  border: 1.5px solid #e0d7c6;
+  padding: 12px 14px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(28, 25, 23, 0.18);
   font-family: 'Space Grotesk', 'Segoe UI', sans-serif;
-  font-size: 1.08rem;
-  background: #f8f6f2;
+  font-size: 0.95rem;
+  background: rgba(255, 255, 255, 0.9);
   color: var(--ink);
-  transition: border 0.18s, box-shadow 0.18s, background 0.18s;
-  box-shadow: 0 1px 4px rgba(31, 27, 22, 0.04);
+  transition: border 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
 }
 
 .field input:focus {
   outline: none;
-  border-color: #0f766e;
-  background: #fff;
-  box-shadow: 0 0 0 2px #0f766e33;
+  border-color: rgba(15, 118, 110, 0.6);
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.16);
+  background: #ffffff;
+}
+
+.form-grid {
+  display: grid;
+  gap: 16px;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  margin-top: 12px;
+}
+
+.field-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.field-row input {
+  flex: 1;
+  min-width: 0;
+}
+
+.form-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 14px;
+  margin-top: 14px;
+}
+
+.field.full {
+  flex: 1;
+  min-width: 240px;
+}
+
+.hint {
+  font-size: 0.78rem;
+  color: #6b5e51;
+}
+
+.btn.small {
+  padding: 8px 12px;
+  font-size: 0.82rem;
 }
 
 .btn:disabled {

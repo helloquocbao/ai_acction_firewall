@@ -409,39 +409,61 @@ export default function App() {
           {/* Step 4: Issue Permission */}
           <div style={{ marginBottom: 24 }}>
             <b>4. Issue Permission</b>
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                marginTop: 8,
-                flexWrap: "wrap",
-              }}
-            >
-              <input
-                style={{ flex: 1, minWidth: 120 }}
-                value={agent}
-                onChange={(e) => setAgent(e.target.value)}
-                placeholder="Agent address"
-              />
-              <input
-                style={{ width: 120 }}
-                value={maxAmountSui}
-                onChange={(e) => setMaxAmountSui(e.target.value)}
-                placeholder="Max/transfer"
-              />
-              <input
-                style={{ width: 120 }}
-                value={totalQuotaSui}
-                onChange={(e) => setTotalQuotaSui(e.target.value)}
-                placeholder="Total quota"
-              />
-              <input
-                style={{ width: 120 }}
-                value={expiryMinutes}
-                onChange={(e) => setExpiryMinutes(e.target.value)}
-                placeholder="Expiry (min)"
-              />
+            <div className="form-grid">
+              <div className="field">
+                <label htmlFor="issue-agent">Agent address</label>
+                <div className="field-row">
+                  <input
+                    id="issue-agent"
+                    value={agent}
+                    onChange={(e) => setAgent(e.target.value)}
+                    placeholder="0x..."
+                  />
+                  <button
+                    className="btn ghost small"
+                    type="button"
+                    onClick={() => setAgent(account?.address ?? "")}
+                    disabled={!account?.address || isPending}
+                  >
+                    Use my wallet
+                  </button>
+                </div>
+                <span className="hint">
+                  This address can propose transfers using the permission.
+                </span>
+              </div>
+              <div className="field">
+                <label htmlFor="issue-max">Max per transfer (SUI)</label>
+                <input
+                  id="issue-max"
+                  value={maxAmountSui}
+                  onChange={(e) => setMaxAmountSui(e.target.value)}
+                  placeholder="0.05"
+                />
+                <span className="hint">Hard cap for a single transfer.</span>
+              </div>
+              <div className="field">
+                <label htmlFor="issue-total">Total quota (SUI)</label>
+                <input
+                  id="issue-total"
+                  value={totalQuotaSui}
+                  onChange={(e) => setTotalQuotaSui(e.target.value)}
+                  placeholder="0.1"
+                />
+                <span className="hint">Set to 0 for unlimited total.</span>
+              </div>
+              <div className="field">
+                <label htmlFor="issue-expiry">Expiry (minutes)</label>
+                <input
+                  id="issue-expiry"
+                  value={expiryMinutes}
+                  onChange={(e) => setExpiryMinutes(e.target.value)}
+                  placeholder="0"
+                />
+                <span className="hint">Set to 0 for no expiry.</span>
+              </div>
+            </div>
+            <div className="form-footer">
               <button
                 className="btn primary"
                 type="button"
@@ -450,57 +472,73 @@ export default function App() {
               >
                 Issue Permission
               </button>
+              <div className="field full">
+                <label htmlFor="issue-permission-id">Permission ID</label>
+                <input
+                  id="issue-permission-id"
+                  value={permissionId}
+                  onChange={(e) => setPermissionId(e.target.value)}
+                  placeholder="Auto-filled after issue"
+                />
+              </div>
             </div>
-            <input
-              style={{ marginTop: 8, width: "100%" }}
-              value={permissionId}
-              onChange={(e) => setPermissionId(e.target.value)}
-              placeholder="Permission ID"
-            />
-            <span className="note">Limit, quota, expiry (0 = unlimited).</span>
           </div>
           {/* Step 5: Propose Transfer */}
           <div style={{ marginBottom: 24 }}>
             <b>5. Propose Transfer</b>
-            <div
-              style={{
-                display: "flex",
-                gap: 12,
-                alignItems: "center",
-                marginTop: 8,
-                flexWrap: "wrap",
-              }}
-            >
-              <input
-                style={{ flex: 1, minWidth: 120 }}
-                value={recipient}
-                onChange={(e) => setRecipient(e.target.value)}
-                placeholder="Recipient address"
-              />
-              <input
-                style={{ width: 120 }}
-                value={transferSui}
-                onChange={(e) => setTransferSui(e.target.value)}
-                placeholder="Amount SUI"
-              />
+            <div className="form-grid">
+              <div className="field">
+                <label htmlFor="propose-recipient">Recipient address</label>
+                <div className="field-row">
+                  <input
+                    id="propose-recipient"
+                    value={recipient}
+                    onChange={(e) => setRecipient(e.target.value)}
+                    placeholder="0x..."
+                  />
+                  <button
+                    className="btn ghost small"
+                    type="button"
+                    onClick={() => setRecipient(account?.address ?? "")}
+                    disabled={!account?.address || isPending}
+                  >
+                    Use my wallet
+                  </button>
+                </div>
+                <span className="hint">Who will receive the transfer.</span>
+              </div>
+              <div className="field">
+                <label htmlFor="propose-amount">Amount (SUI)</label>
+                <input
+                  id="propose-amount"
+                  value={transferSui}
+                  onChange={(e) => setTransferSui(e.target.value)}
+                  placeholder="0.01"
+                />
+                <span className="hint">
+                  Must be within the permission limits.
+                </span>
+              </div>
+            </div>
+            <div className="form-footer">
               <button
                 className="btn primary"
                 type="button"
                 onClick={onProposeTransfer}
                 disabled={isPending}
               >
-                Propose
+                Propose Transfer
               </button>
+              <div className="field full">
+                <label htmlFor="propose-id">Proposal ID</label>
+                <input
+                  id="propose-id"
+                  value={proposalId}
+                  onChange={(e) => setProposalId(e.target.value)}
+                  placeholder="Auto-filled after propose"
+                />
+              </div>
             </div>
-            <input
-              style={{ marginTop: 8, width: "100%" }}
-              value={proposalId}
-              onChange={(e) => setProposalId(e.target.value)}
-              placeholder="Proposal ID"
-            />
-            <span className="note">
-              Agent creates a proposal before execution.
-            </span>
           </div>
           {/* Step 6: Execute Transfer */}
           <div style={{ marginBottom: 0 }}>
