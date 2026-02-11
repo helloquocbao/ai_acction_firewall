@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+﻿import { useEffect, useMemo, useState } from "react";
 import {
   ConnectButton,
   useCurrentAccount,
@@ -135,7 +135,7 @@ export default function App() {
   const [status, setStatus] = useState<Status>({
     kind: "idle",
     message:
-      "AI Action Firewall is a Sui Move MVP that grants scoped SUI transfer permissions (per-transfer cap, total quota, expiry) via Vault and ActionProposal.",
+      "AI Action Firewall is a Sui that grants scoped SUI transfer permissions (per-transfer cap, total quota, expiry) via Vault and ActionProposal.",
   });
   const [toast, setToast] = useState<Toast | null>(null);
 
@@ -430,7 +430,9 @@ export default function App() {
           <div className="chip-row">
             <span className="chip">Network: {IDS.network}</span>
             <span className="chip">Module: firewall</span>
-            <span className="chip">1 SUI = 1,000,000,000 MIST</span>
+            <span className="chip">
+              Control agent transfers with scoped permissions
+            </span>
           </div>
         </header>
         <div className="status-card" style={{ marginBottom: 24 }}>
@@ -747,19 +749,19 @@ export default function App() {
           <div className="status-grid">
             <div>
               <span>AdminCap</span>
-              <code>{adminId ? shortAddress(adminId) : "—"}</code>
+              <code>{adminId ? shortAddress(adminId) : "â€”"}</code>
             </div>
             <div>
               <span>Vault</span>
-              <code>{vaultId ? shortAddress(vaultId) : "—"}</code>
+              <code>{vaultId ? shortAddress(vaultId) : "â€”"}</code>
             </div>
             <div>
               <span>Permission</span>
-              <code>{permissionId ? shortAddress(permissionId) : "—"}</code>
+              <code>{permissionId ? shortAddress(permissionId) : "â€”"}</code>
             </div>
             <div>
               <span>Proposal</span>
-              <code>{proposalId ? shortAddress(proposalId) : "—"}</code>
+              <code>{proposalId ? shortAddress(proposalId) : "â€”"}</code>
             </div>
           </div>
         </div>
