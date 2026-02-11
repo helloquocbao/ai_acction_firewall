@@ -16,6 +16,12 @@ type Status = {
   digest?: string;
 };
 
+type Toast = {
+  kind: StatusKind;
+  message: string;
+  digest?: string;
+};
+
 const MODULE = "firewall";
 const MIST_PER_SUI = 1_000_000_000n;
 const STORAGE_PREFIX = `firewall:${IDS.network}:${IDS.packageId}:`;
@@ -35,7 +41,7 @@ function isFirewallAbort(message: string) {
   const lower = message.toLowerCase();
   return (
     lower.includes("::firewall") ||
-    lower.includes("identifier(\"firewall\")") ||
+    lower.includes('identifier("firewall")') ||
     lower.includes(IDS.packageId.toLowerCase())
   );
 }
@@ -131,6 +137,7 @@ export default function App() {
     message:
       "AI Action Firewall is a Sui Move MVP that grants scoped SUI transfer permissions (per-transfer cap, total quota, expiry) via Vault and ActionProposal.",
   });
+  const [toast, setToast] = useState<Toast | null>(null);
 
   useEffect(() => {
     setAdminId(readStored("adminId"));
@@ -149,6 +156,17 @@ export default function App() {
       setRecipient(account.address);
     }
   }, [account?.address, agent, recipient]);
+
+  useEffect(() => {
+    if (status.kind !== "error") return;
+    setToast({
+      kind: status.kind,
+      message: status.message,
+      digest: status.digest,
+    });
+    const timer = setTimeout(() => setToast(null), 6000);
+    return () => clearTimeout(timer);
+  }, [status]);
 
   useEffect(() => {
     writeStored("adminId", adminId);
@@ -381,6 +399,24 @@ export default function App() {
 
   return (
     <div className="app" style={{ display: "flex", gap: 32 }}>
+      {toast && (
+        <div className={`toast ${toast.kind}`}>
+          <div className="toast-title">Transaction Error</div>
+          <div className="toast-message">{toast.message}</div>
+          {toast.digest && (
+            <div className="toast-digest">
+              Digest: <code>{toast.digest}</code>
+            </div>
+          )}
+          <button
+            className="toast-close"
+            type="button"
+            onClick={() => setToast(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
       <div style={{ flex: 2, minWidth: 0 }}>
         {/* Orbs removed for minimal UI */}
         {/* Orbs removed for minimal UI */}
@@ -498,9 +534,9 @@ export default function App() {
           <div style={{ marginBottom: 24 }}>
             <b>4. Issue Permission</b>
             <div className="form-grid">
-              <div className="field">
+              <div className="field full">
                 <label htmlFor="issue-agent">Agent address</label>
-                <div className="field-row">
+                <div className="field-row stack">
                   <input
                     id="issue-agent"
                     value={agent}
@@ -516,11 +552,17 @@ export default function App() {
                     Use my wallet
                   </button>
                 </div>
+                <div className="preview-line">
+                  <span>Preview</span>
+                  <code className="mono">
+                    {agent ? shortAddress(agent) : "Not set"}
+                  </code>
+                </div>
                 <span className="hint">
                   This address can propose transfers using the permission.
                 </span>
               </div>
-              <div className="field">
+              <div className="field w-[50%]">
                 <label htmlFor="issue-max">Max per transfer (SUI)</label>
                 <input
                   id="issue-max"
@@ -530,7 +572,7 @@ export default function App() {
                 />
                 <span className="hint">Hard cap for a single transfer.</span>
               </div>
-              <div className="field">
+              <div className="field w-[50%]">
                 <label htmlFor="issue-total">Total quota (SUI)</label>
                 <input
                   id="issue-total"
@@ -575,7 +617,7 @@ export default function App() {
           <div style={{ marginBottom: 24 }}>
             <b>5. Propose Transfer</b>
             <div className="form-grid">
-              <div className="field">
+              <div className="field full">
                 <label htmlFor="propose-recipient">Recipient address</label>
                 <div className="field-row">
                   <input
@@ -592,6 +634,12 @@ export default function App() {
                   >
                     Use my wallet
                   </button>
+                </div>
+                <div className="preview-line">
+                  <span>Preview</span>
+                  <code className="mono">
+                    {recipient ? shortAddress(recipient) : "Not set"}
+                  </code>
                 </div>
                 <span className="hint">Who will receive the transfer.</span>
               </div>
