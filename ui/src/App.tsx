@@ -1,9 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
-import { ConnectButton, useCurrentAccount, useSignAndExecuteTransaction, useSuiClient } from '@mysten/dapp-kit';
-import { Transaction } from '@mysten/sui/transactions';
-import { IDS } from './ids';
+import { useEffect, useMemo, useState } from "react";
+import {
+  ConnectButton,
+  useCurrentAccount,
+  useSignAndExecuteTransaction,
+  useSuiClient,
+} from "@mysten/dapp-kit";
+import { Transaction } from "@mysten/sui/transactions";
+import { IDS } from "./ids";
 
-type StatusKind = 'idle' | 'info' | 'success' | 'error';
+type StatusKind = "idle" | "info" | "success" | "error";
 
 type Status = {
   kind: StatusKind;
@@ -11,15 +16,15 @@ type Status = {
   digest?: string;
 };
 
-const MODULE = 'firewall';
+const MODULE = "firewall";
 const MIST_PER_SUI = 1_000_000_000n;
 
 function parseSuiToMist(input: string): bigint | null {
   const value = input.trim();
   if (!value) return null;
   if (!/^\d+(\.\d{0,9})?$/.test(value)) return null;
-  const [whole, frac = ''] = value.split('.');
-  const padded = (frac + '000000000').slice(0, 9);
+  const [whole, frac = ""] = value.split(".");
+  const padded = (frac + "000000000").slice(0, 9);
   return BigInt(whole) * MIST_PER_SUI + BigInt(padded);
 }
 
@@ -31,9 +36,12 @@ function shortAddress(value: string) {
 function findCreatedId(result: any, suffix: string) {
   const changes = result?.objectChanges ?? [];
   const created = changes.find(
-    (change: any) => change?.type === 'created' && typeof change?.objectType === 'string' && change.objectType.endsWith(suffix)
+    (change: any) =>
+      change?.type === "created" &&
+      typeof change?.objectType === "string" &&
+      change.objectType.endsWith(suffix),
   );
-  return created?.objectId ?? '';
+  return created?.objectId ?? "";
 }
 
 export default function App() {
@@ -52,22 +60,22 @@ export default function App() {
       }),
   });
 
-  const [adminId, setAdminId] = useState('');
-  const [vaultId, setVaultId] = useState('');
-  const [permissionId, setPermissionId] = useState('');
-  const [proposalId, setProposalId] = useState('');
-
-  const [depositSui, setDepositSui] = useState('0.1');
-  const [maxAmountSui, setMaxAmountSui] = useState('0.05');
-  const [totalQuotaSui, setTotalQuotaSui] = useState('0.1');
-  const [expiryMinutes, setExpiryMinutes] = useState('0');
-  const [recipient, setRecipient] = useState('');
-  const [transferSui, setTransferSui] = useState('0.01');
-  const [agent, setAgent] = useState('');
-
+  // State for the full workflow
+  const [adminId, setAdminId] = useState("");
+  const [vaultId, setVaultId] = useState("");
+  const [permissionId, setPermissionId] = useState("");
+  const [proposalId, setProposalId] = useState("");
+  const [depositSui, setDepositSui] = useState("0.1");
+  const [maxAmountSui, setMaxAmountSui] = useState("0.05");
+  const [totalQuotaSui, setTotalQuotaSui] = useState("0.1");
+  const [expiryMinutes, setExpiryMinutes] = useState("0");
+  const [recipient, setRecipient] = useState("");
+  const [transferSui, setTransferSui] = useState("0.01");
+  const [agent, setAgent] = useState("");
   const [status, setStatus] = useState<Status>({
-    kind: 'idle',
-    message: 'Ready to connect wallet.',
+    kind: "idle",
+    message:
+      "AI Action Firewall is a Sui Move MVP that grants scoped SUI transfer permissions (per-transfer cap, total quota, expiry) via Vault and ActionProposal.",
   });
 
   useEffect(() => {
@@ -83,12 +91,12 @@ export default function App() {
 
   const runTransaction = (tx: Transaction, label: string) => {
     if (!account?.address) {
-      setStatus({ kind: 'error', message: 'Please connect a wallet first.' });
-      return Promise.reject(new Error('No wallet connected'));
+      setStatus({ kind: "error", message: "Please connect a wallet first." });
+      return Promise.reject(new Error("No wallet connected"));
     }
 
     tx.setSenderIfNotSet(account.address);
-    setStatus({ kind: 'info', message: `Submitting ${label}...` });
+    setStatus({ kind: "info", message: `Submitting ${label}...` });
 
     return new Promise<any>((resolve, reject) => {
       signAndExecute(
@@ -97,20 +105,32 @@ export default function App() {
         },
         {
           onSuccess: (result) => {
-            setStatus({ kind: 'success', message: `${label} confirmed.`, digest: result.digest });
+            setStatus({
+              kind: "success",
+              message: `${label} confirmed.`,
+              digest: result.digest,
+            });
             resolve(result);
           },
           onError: (error) => {
-            const message = error instanceof Error ? error.message : String(error);
-            setStatus({ kind: 'error', message: `${label} failed: ${message}` });
+            const message =
+              error instanceof Error ? error.message : String(error);
+            setStatus({
+              kind: "error",
+              message: `${label} failed: ${message}`,
+            });
             reject(error);
           },
-        }
+        },
       );
     });
   };
 
-  const runAndCapture = async (tx: Transaction, label: string, onSuccess?: (result: any) => void) => {
+  const runAndCapture = async (
+    tx: Transaction,
+    label: string,
+    onSuccess?: (result: any) => void,
+  ) => {
     try {
       const result = await runTransaction(tx, label);
       if (onSuccess) onSuccess(result);
@@ -125,15 +145,15 @@ export default function App() {
       target: `${baseTarget}::create_admin`,
       arguments: [],
     });
-    await runAndCapture(tx, 'Create AdminCap', (result) => {
-      const created = findCreatedId(result, '::firewall::AdminCap');
+    await runAndCapture(tx, "Create AdminCap", (result) => {
+      const created = findCreatedId(result, "::firewall::AdminCap");
       if (created) setAdminId(created);
     });
   };
 
   const onCreateVault = async () => {
     if (!adminId) {
-      setStatus({ kind: 'error', message: 'AdminCap ID is required.' });
+      setStatus({ kind: "error", message: "AdminCap ID is required." });
       return;
     }
     const tx = new Transaction();
@@ -141,20 +161,23 @@ export default function App() {
       target: `${baseTarget}::create_vault`,
       arguments: [tx.object(adminId)],
     });
-    await runAndCapture(tx, 'Create Vault', (result) => {
-      const created = findCreatedId(result, '::firewall::Vault');
+    await runAndCapture(tx, "Create Vault", (result) => {
+      const created = findCreatedId(result, "::firewall::Vault");
       if (created) setVaultId(created);
     });
   };
 
   const onDeposit = async () => {
     if (!vaultId) {
-      setStatus({ kind: 'error', message: 'Vault ID is required.' });
+      setStatus({ kind: "error", message: "Vault ID is required." });
       return;
     }
     const amount = parseSuiToMist(depositSui);
     if (!amount || amount <= 0n) {
-      setStatus({ kind: 'error', message: 'Deposit amount must be greater than 0.' });
+      setStatus({
+        kind: "error",
+        message: "Deposit amount must be greater than 0.",
+      });
       return;
     }
     const tx = new Transaction();
@@ -163,29 +186,37 @@ export default function App() {
       target: `${baseTarget}::deposit`,
       arguments: [tx.object(vaultId), coin],
     });
-    await runAndCapture(tx, 'Deposit into Vault');
+    await runAndCapture(tx, "Deposit into Vault");
   };
 
   const onIssuePermission = async () => {
     if (!adminId || !vaultId) {
-      setStatus({ kind: 'error', message: 'AdminCap and Vault IDs are required.' });
+      setStatus({
+        kind: "error",
+        message: "AdminCap and Vault IDs are required.",
+      });
       return;
     }
     if (!agent) {
-      setStatus({ kind: 'error', message: 'Agent address is required.' });
+      setStatus({ kind: "error", message: "Agent address is required." });
       return;
     }
     const maxAmount = parseSuiToMist(maxAmountSui);
     if (!maxAmount || maxAmount <= 0n) {
-      setStatus({ kind: 'error', message: 'Max per transfer must be greater than 0.' });
+      setStatus({
+        kind: "error",
+        message: "Max per transfer must be greater than 0.",
+      });
       return;
     }
-    const totalQuota = totalQuotaSui.trim() ? parseSuiToMist(totalQuotaSui) : 0n;
+    const totalQuota = totalQuotaSui.trim()
+      ? parseSuiToMist(totalQuotaSui)
+      : 0n;
     if (totalQuota === null || totalQuota < 0n) {
-      setStatus({ kind: 'error', message: 'Total quota is invalid.' });
+      setStatus({ kind: "error", message: "Total quota is invalid." });
       return;
     }
-    const minutes = Number(expiryMinutes || '0');
+    const minutes = Number(expiryMinutes || "0");
     const expiresAt = minutes > 0 ? BigInt(Date.now() + minutes * 60_000) : 0n;
 
     const tx = new Transaction();
@@ -200,24 +231,27 @@ export default function App() {
         tx.pure.u64(expiresAt),
       ],
     });
-    await runAndCapture(tx, 'Issue Permission', (result) => {
-      const created = findCreatedId(result, '::firewall::Permission');
+    await runAndCapture(tx, "Issue Permission", (result) => {
+      const created = findCreatedId(result, "::firewall::Permission");
       if (created) setPermissionId(created);
     });
   };
 
   const onProposeTransfer = async () => {
     if (!permissionId) {
-      setStatus({ kind: 'error', message: 'Permission ID is required.' });
+      setStatus({ kind: "error", message: "Permission ID is required." });
       return;
     }
     if (!recipient) {
-      setStatus({ kind: 'error', message: 'Recipient address is required.' });
+      setStatus({ kind: "error", message: "Recipient address is required." });
       return;
     }
     const amount = parseSuiToMist(transferSui);
     if (!amount || amount <= 0n) {
-      setStatus({ kind: 'error', message: 'Transfer amount must be greater than 0.' });
+      setStatus({
+        kind: "error",
+        message: "Transfer amount must be greater than 0.",
+      });
       return;
     }
     const tx = new Transaction();
@@ -230,15 +264,18 @@ export default function App() {
         tx.object(IDS.clockId),
       ],
     });
-    await runAndCapture(tx, 'Propose Transfer', (result) => {
-      const created = findCreatedId(result, '::firewall::ActionProposal');
+    await runAndCapture(tx, "Propose Transfer", (result) => {
+      const created = findCreatedId(result, "::firewall::ActionProposal");
       if (created) setProposalId(created);
     });
   };
 
   const onExecuteTransfer = async () => {
     if (!vaultId || !permissionId || !proposalId) {
-      setStatus({ kind: 'error', message: 'Vault, Permission, and Proposal IDs are required.' });
+      setStatus({
+        kind: "error",
+        message: "Vault, Permission, and Proposal IDs are required.",
+      });
       return;
     }
     const tx = new Transaction();
@@ -251,37 +288,276 @@ export default function App() {
         tx.object(IDS.clockId),
       ],
     });
-    await runAndCapture(tx, 'Execute Transfer');
+    await runAndCapture(tx, "Execute Transfer");
   };
 
   return (
-    <div className="app">
-      <div className="orb orb-1" aria-hidden="true" />
-      <div className="orb orb-2" aria-hidden="true" />
-
-      <header className="hero">
-        <div className="hero-copy">
+    <div className="app" style={{ display: "flex", gap: 32 }}>
+      <div style={{ flex: 2, minWidth: 0 }}>
+        {/* Orbs removed for minimal UI */}
+        {/* Orbs removed for minimal UI */}
+        <header className="hero" style={{ display: "block", marginBottom: 24 }}>
           <span className="eyebrow">Sui Move MVP</span>
           <h1>AI Action Firewall Console</h1>
           <p className="lead">
-            Connect your wallet, create a vault, issue permissions, and execute transfers through the on-chain firewall.
+            Connect your wallet, create a vault, issue permissions, and execute
+            transfers through the on-chain firewall.
           </p>
           <div className="chip-row">
             <span className="chip">Network: {IDS.network}</span>
             <span className="chip">Module: firewall</span>
             <span className="chip">1 SUI = 1,000,000,000 MIST</span>
           </div>
+        </header>
+        <div className="status-card" style={{ marginBottom: 24 }}>
+          <div className="status-title">Status</div>
+          <div className="status-message">{status.message}</div>
+          {status.digest && (
+            <div className="status-digest">
+              Digest: <code>{status.digest}</code>
+            </div>
+          )}
         </div>
-
-        <div className="panel-card">
+        <div className="panel-card" style={{ padding: 32, marginBottom: 32 }}>
+          <h2 style={{ marginTop: 0 }}>Workflow</h2>
+          {/* Step 1: Create AdminCap */}
+          <div style={{ marginBottom: 24 }}>
+            <b>1. Create AdminCap</b>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                marginTop: 8,
+              }}
+            >
+              <button
+                className="btn primary"
+                type="button"
+                onClick={onCreateAdmin}
+                disabled={isPending}
+              >
+                Create AdminCap
+              </button>
+              <input
+                style={{ flex: 1 }}
+                value={adminId}
+                onChange={(e) => setAdminId(e.target.value)}
+                placeholder="AdminCap ID"
+              />
+            </div>
+            <span className="note">
+              AdminCap allows you to create vaults and issue permissions.
+            </span>
+          </div>
+          {/* Step 2: Create Vault */}
+          <div style={{ marginBottom: 24 }}>
+            <b>2. Create Vault</b>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                marginTop: 8,
+              }}
+            >
+              <button
+                className="btn primary"
+                type="button"
+                onClick={onCreateVault}
+                disabled={isPending}
+              >
+                Create Vault
+              </button>
+              <input
+                style={{ flex: 1 }}
+                value={vaultId}
+                onChange={(e) => setVaultId(e.target.value)}
+                placeholder="Vault ID"
+              />
+            </div>
+            <span className="note">Vault is a shared SUI storage object.</span>
+          </div>
+          {/* Step 3: Fund Vault */}
+          <div style={{ marginBottom: 24 }}>
+            <b>3. Fund Vault</b>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                marginTop: 8,
+              }}
+            >
+              <input
+                style={{ width: 120 }}
+                value={depositSui}
+                onChange={(e) => setDepositSui(e.target.value)}
+                placeholder="Deposit SUI"
+              />
+              <button
+                className="btn primary"
+                type="button"
+                onClick={onDeposit}
+                disabled={isPending}
+              >
+                Deposit SUI
+              </button>
+            </div>
+            <span className="note">Deposit SUI into the vault (SUI unit).</span>
+          </div>
+          {/* Step 4: Issue Permission */}
+          <div style={{ marginBottom: 24 }}>
+            <b>4. Issue Permission</b>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                marginTop: 8,
+                flexWrap: "wrap",
+              }}
+            >
+              <input
+                style={{ flex: 1, minWidth: 120 }}
+                value={agent}
+                onChange={(e) => setAgent(e.target.value)}
+                placeholder="Agent address"
+              />
+              <input
+                style={{ width: 120 }}
+                value={maxAmountSui}
+                onChange={(e) => setMaxAmountSui(e.target.value)}
+                placeholder="Max/transfer"
+              />
+              <input
+                style={{ width: 120 }}
+                value={totalQuotaSui}
+                onChange={(e) => setTotalQuotaSui(e.target.value)}
+                placeholder="Total quota"
+              />
+              <input
+                style={{ width: 120 }}
+                value={expiryMinutes}
+                onChange={(e) => setExpiryMinutes(e.target.value)}
+                placeholder="Expiry (min)"
+              />
+              <button
+                className="btn primary"
+                type="button"
+                onClick={onIssuePermission}
+                disabled={isPending}
+              >
+                Issue Permission
+              </button>
+            </div>
+            <input
+              style={{ marginTop: 8, width: "100%" }}
+              value={permissionId}
+              onChange={(e) => setPermissionId(e.target.value)}
+              placeholder="Permission ID"
+            />
+            <span className="note">Limit, quota, expiry (0 = unlimited).</span>
+          </div>
+          {/* Step 5: Propose Transfer */}
+          <div style={{ marginBottom: 24 }}>
+            <b>5. Propose Transfer</b>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                marginTop: 8,
+                flexWrap: "wrap",
+              }}
+            >
+              <input
+                style={{ flex: 1, minWidth: 120 }}
+                value={recipient}
+                onChange={(e) => setRecipient(e.target.value)}
+                placeholder="Recipient address"
+              />
+              <input
+                style={{ width: 120 }}
+                value={transferSui}
+                onChange={(e) => setTransferSui(e.target.value)}
+                placeholder="Amount SUI"
+              />
+              <button
+                className="btn primary"
+                type="button"
+                onClick={onProposeTransfer}
+                disabled={isPending}
+              >
+                Propose
+              </button>
+            </div>
+            <input
+              style={{ marginTop: 8, width: "100%" }}
+              value={proposalId}
+              onChange={(e) => setProposalId(e.target.value)}
+              placeholder="Proposal ID"
+            />
+            <span className="note">
+              Agent creates a proposal before execution.
+            </span>
+          </div>
+          {/* Step 6: Execute Transfer */}
+          <div style={{ marginBottom: 0 }}>
+            <b>6. Execute Transfer</b>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                alignItems: "center",
+                marginTop: 8,
+                flexWrap: "wrap",
+              }}
+            >
+              <button
+                className="btn primary"
+                type="button"
+                onClick={onExecuteTransfer}
+                disabled={isPending}
+              >
+                Execute
+              </button>
+              <input
+                style={{ flex: 1, minWidth: 120 }}
+                value={vaultId}
+                onChange={(e) => setVaultId(e.target.value)}
+                placeholder="Vault ID"
+              />
+              <input
+                style={{ flex: 1, minWidth: 120 }}
+                value={permissionId}
+                onChange={(e) => setPermissionId(e.target.value)}
+                placeholder="Permission ID"
+              />
+              <input
+                style={{ flex: 1, minWidth: 120 }}
+                value={proposalId}
+                onChange={(e) => setProposalId(e.target.value)}
+                placeholder="Proposal ID"
+              />
+            </div>
+            <span className="note">Execute the proposal if valid.</span>
+          </div>
+        </div>
+      </div>
+      {/* Right sidebar: wallet and object info */}
+      <aside style={{ flex: 1, minWidth: 320, maxWidth: 400 }}>
+        <div className="panel-card" style={{ marginBottom: 24 }}>
           <div className="panel-header">
             <span className="pill">Wallet</span>
-            <span className="pill ghost">{account?.address ? 'Connected' : 'Disconnected'}</span>
+            <span className="pill ghost">
+              {account?.address ? "Connected" : "Disconnected"}
+            </span>
           </div>
           <ConnectButton />
           <div className="keyline">
             <span>Address</span>
-            <code className="mono">{account?.address ?? 'Not connected'}</code>
+            <code className="mono">{account?.address ?? "Not connected"}</code>
           </div>
           <div className="keyline">
             <span>Package</span>
@@ -292,160 +568,28 @@ export default function App() {
             <code className="mono">{IDS.clockId}</code>
           </div>
         </div>
-      </header>
-
-      <section className="status">
-        <div className={`status-card ${status.kind}`}>
-          <div className="status-title">Status</div>
-          <div className="status-message">{status.message}</div>
-          {status.digest && (
-            <div className="status-digest">
-              Digest: <code>{status.digest}</code>
-            </div>
-          )}
-        </div>
         <div className="status-card neutral">
           <div className="status-title">Objects</div>
           <div className="status-grid">
             <div>
               <span>AdminCap</span>
-              <code>{adminId ? shortAddress(adminId) : '—'}</code>
+              <code>{adminId ? shortAddress(adminId) : "—"}</code>
             </div>
             <div>
               <span>Vault</span>
-              <code>{vaultId ? shortAddress(vaultId) : '—'}</code>
+              <code>{vaultId ? shortAddress(vaultId) : "—"}</code>
             </div>
             <div>
               <span>Permission</span>
-              <code>{permissionId ? shortAddress(permissionId) : '—'}</code>
+              <code>{permissionId ? shortAddress(permissionId) : "—"}</code>
             </div>
             <div>
               <span>Proposal</span>
-              <code>{proposalId ? shortAddress(proposalId) : '—'}</code>
+              <code>{proposalId ? shortAddress(proposalId) : "—"}</code>
             </div>
           </div>
         </div>
-      </section>
-
-      <section className="grid">
-        <article className="card">
-          <h2>1. Create AdminCap</h2>
-          <p className="note">AdminCap lets you create vaults and issue permissions.</p>
-          <div className="row">
-            <button className="btn primary" type="button" onClick={onCreateAdmin} disabled={isPending}>
-              Create AdminCap
-            </button>
-          </div>
-          <label className="field">
-            <span>AdminCap ID</span>
-            <input value={adminId} onChange={(event) => setAdminId(event.target.value)} placeholder="0x..." />
-          </label>
-        </article>
-
-        <article className="card">
-          <h2>2. Create Vault</h2>
-          <p className="note">Vault is a shared object holding the SUI balance.</p>
-          <label className="field">
-            <span>AdminCap ID</span>
-            <input value={adminId} onChange={(event) => setAdminId(event.target.value)} placeholder="0x..." />
-          </label>
-          <button className="btn primary" type="button" onClick={onCreateVault} disabled={isPending}>
-            Create Vault
-          </button>
-          <label className="field">
-            <span>Vault ID</span>
-            <input value={vaultId} onChange={(event) => setVaultId(event.target.value)} placeholder="0x..." />
-          </label>
-        </article>
-
-        <article className="card">
-          <h2>3. Fund Vault</h2>
-          <p className="note">Deposit SUI into the shared vault (input in SUI).</p>
-          <label className="field">
-            <span>Vault ID</span>
-            <input value={vaultId} onChange={(event) => setVaultId(event.target.value)} placeholder="0x..." />
-          </label>
-          <label className="field">
-            <span>Deposit amount (SUI)</span>
-            <input value={depositSui} onChange={(event) => setDepositSui(event.target.value)} placeholder="0.1" />
-          </label>
-          <button className="btn primary" type="button" onClick={onDeposit} disabled={isPending}>
-            Deposit into Vault
-          </button>
-        </article>
-
-        <article className="card">
-          <h2>4. Issue Permission</h2>
-          <p className="note">Define limits and optionally set expiry.</p>
-          <label className="field">
-            <span>Agent address</span>
-            <input value={agent} onChange={(event) => setAgent(event.target.value)} placeholder="0x..." />
-          </label>
-          <label className="field">
-            <span>Max per transfer (SUI)</span>
-            <input value={maxAmountSui} onChange={(event) => setMaxAmountSui(event.target.value)} placeholder="0.05" />
-          </label>
-          <label className="field">
-            <span>Total quota (SUI, 0 = unlimited)</span>
-            <input value={totalQuotaSui} onChange={(event) => setTotalQuotaSui(event.target.value)} placeholder="0.1" />
-          </label>
-          <label className="field">
-            <span>Expiry (minutes, 0 = no expiry)</span>
-            <input value={expiryMinutes} onChange={(event) => setExpiryMinutes(event.target.value)} placeholder="0" />
-          </label>
-          <button className="btn primary" type="button" onClick={onIssuePermission} disabled={isPending}>
-            Issue Permission
-          </button>
-          <label className="field">
-            <span>Permission ID</span>
-            <input value={permissionId} onChange={(event) => setPermissionId(event.target.value)} placeholder="0x..." />
-          </label>
-        </article>
-
-        <article className="card">
-          <h2>5. Propose Transfer</h2>
-          <p className="note">Agent creates a proposal before execution.</p>
-          <label className="field">
-            <span>Permission ID</span>
-            <input value={permissionId} onChange={(event) => setPermissionId(event.target.value)} placeholder="0x..." />
-          </label>
-          <label className="field">
-            <span>Recipient address</span>
-            <input value={recipient} onChange={(event) => setRecipient(event.target.value)} placeholder="0x..." />
-          </label>
-          <label className="field">
-            <span>Transfer amount (SUI)</span>
-            <input value={transferSui} onChange={(event) => setTransferSui(event.target.value)} placeholder="0.01" />
-          </label>
-          <button className="btn primary" type="button" onClick={onProposeTransfer} disabled={isPending}>
-            Propose Transfer
-          </button>
-          <label className="field">
-            <span>Proposal ID</span>
-            <input value={proposalId} onChange={(event) => setProposalId(event.target.value)} placeholder="0x..." />
-          </label>
-        </article>
-
-        <article className="card">
-          <h2>6. Execute Transfer</h2>
-          <p className="note">Executes the proposal if it passes all guardrails.</p>
-          <label className="field">
-            <span>Vault ID</span>
-            <input value={vaultId} onChange={(event) => setVaultId(event.target.value)} placeholder="0x..." />
-          </label>
-          <label className="field">
-            <span>Permission ID</span>
-            <input value={permissionId} onChange={(event) => setPermissionId(event.target.value)} placeholder="0x..." />
-          </label>
-          <label className="field">
-            <span>Proposal ID</span>
-            <input value={proposalId} onChange={(event) => setProposalId(event.target.value)} placeholder="0x..." />
-          </label>
-          <button className="btn primary" type="button" onClick={onExecuteTransfer} disabled={isPending}>
-            Execute Transfer
-          </button>
-        </article>
-      </section>
+      </aside>
     </div>
   );
 }
